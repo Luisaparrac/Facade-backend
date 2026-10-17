@@ -1,0 +1,40 @@
+package com.clinic.config;
+
+import com.clinic.security.AuthInterceptor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.Arrays;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    private final AuthInterceptor authInterceptor;
+    private final String[] allowedOrigins;
+
+    public WebConfig(AuthInterceptor authInterceptor,
+                     @Value("${clinic.cors.allowed-origins}") String allowedOrigins) {
+        this.authInterceptor = authInterceptor;
+        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toArray(String[]::new);
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(authInterceptor).addPathPatterns("/api/**");
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                .allowedOriginPatterns(allowedOrigins)
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .maxAge(3600);
+    }
+}

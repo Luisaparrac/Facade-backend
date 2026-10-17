@@ -1,0 +1,112 @@
+# Example requests for the VS Code "REST Client" extension (also useful as a Postman reference).
+# Run "login" first: the token and patient id are captured automatically for the protected requests.
+# Appointment dates must be future weekdays, on the hour or half hour (08:00-11:30, 14:00-16:30).
+
+@baseUrl = http://localhost:8080/api/clinic
+
+### Health check
+GET http://localhost:8080/api/health
+
+### Specialties (public)
+GET {{baseUrl}}/specialties
+
+### Doctors with available slots for a date (public)
+GET {{baseUrl}}/doctors?specialty=CARDIOLOGY&date=2026-10-27
+
+### Laboratory exam catalog with reference ranges (public)
+GET {{baseUrl}}/lab/exams
+
+### Register a patient (public)
+POST {{baseUrl}}/patient
+Content-Type: application/json
+
+{
+  "documentType": "CITIZEN_ID",
+  "documentNumber": "1098765432",
+  "firstName": "Laura",
+  "lastName": "Gomez",
+  "birthDate": "1998-03-21",
+  "email": "laura.gomez@example.com",
+  "phone": "3105551234",
+  "password": "Secret123!",
+  "allergies": ["Penicillin"]
+}
+
+### Log in with the demo patient (public)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "documentNumber": "1000000001",
+  "password": "Demo1234!"
+}
+
+###
+@token = {{login.response.body.$.token}}
+@patientId = {{login.response.body.$.patient.id}}
+
+### Patient profile
+GET {{baseUrl}}/patient/{{patientId}}
+Authorization: Bearer {{token}}
+
+### Schedule an appointment (doctorId and reason are optional)
+# @name appointment
+POST {{baseUrl}}/appointment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "patientId": {{patientId}},
+  "specialty": "CARDIOLOGY",
+  "dateTime": "2026-10-27T10:00:00",
+  "reason": "Chest discomfort when exercising"
+}
+
+### Cancel the appointment created above
+DELETE {{baseUrl}}/appointment/{{appointment.response.body.$.appointment.id}}
+Authorization: Bearer {{token}}
+
+### Full clinical history (appointments + consultations + prescriptions + lab results)
+GET {{baseUrl}}/history/{{patientId}}
+Authorization: Bearer {{token}}
+
+### Prescription rejected: the demo patient is allergic to penicillin
+POST {{baseUrl}}/prescription
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "patientId": {{patientId}},
+  "medications": [
+    { "name": "Amoxicillin", "dose": "500 mg", "frequency": "Every 8 hours", "durationDays": 7 }
+  ]
+}
+
+### Valid prescription (diagnosis and doctorId are optional; a diagnosis is saved as a consultation)
+POST {{baseUrl}}/prescription
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "patientId": {{patientId}},
+  "diagnosis": "Seasonal allergic rhinitis",
+  "doctorId": 1,
+  "medications": [
+    { "name": "Loratadine", "dose": "10 mg", "frequency": "Once a day", "durationDays": 10, "instructions": "Take in the morning" }
+  ]
+}
+
+### Request laboratory exams (CBC, GLUCOSE, LIPID_PROFILE)
+POST {{baseUrl}}/lab
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "patientId": {{patientId}},
+  "exams": ["CBC", "GLUCOSE", "LIPID_PROFILE"]
+}
+
+### Log out
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
