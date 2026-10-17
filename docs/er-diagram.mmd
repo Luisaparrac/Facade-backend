@@ -1,0 +1,94 @@
+erDiagram
+    PATIENTS ||--o{ APPOINTMENTS : books
+    DOCTORS ||--o{ APPOINTMENTS : attends
+    PATIENTS ||--o{ CONSULTATIONS : has
+    PATIENTS ||--o{ ALLERGIES : has
+    PATIENTS ||--o{ PRESCRIPTIONS : receives
+    PRESCRIPTIONS ||--|{ PRESCRIPTION_ITEMS : contains
+    PATIENTS ||--o{ LAB_ORDERS : requests
+    LAB_ORDERS ||--|{ LAB_RESULTS : produces
+    PATIENTS ||--o{ SESSION_TOKENS : "logs in"
+
+    PATIENTS {
+        bigint id PK
+        varchar document_type
+        varchar document_number UK
+        varchar first_name
+        varchar last_name
+        date birth_date
+        varchar email UK
+        varchar phone
+        varchar password_hash
+        timestamp created_at
+    }
+    DOCTORS {
+        bigint id PK
+        varchar full_name
+        varchar specialty
+        varchar license_number UK
+    }
+    APPOINTMENTS {
+        bigint id PK
+        bigint patient_id FK
+        bigint doctor_id FK
+        timestamp date_time
+        varchar status
+        varchar reason
+        timestamp created_at
+        timestamp cancelled_at
+    }
+    CONSULTATIONS {
+        bigint id PK
+        bigint patient_id FK
+        varchar doctor_name
+        varchar specialty
+        timestamp consultation_date
+        varchar reason
+        varchar diagnosis
+        varchar notes
+    }
+    ALLERGIES {
+        bigint id PK
+        bigint patient_id FK
+        varchar substance
+        varchar reaction
+    }
+    PRESCRIPTIONS {
+        bigint id PK
+        bigint patient_id FK
+        varchar doctor_name
+        varchar diagnosis
+        timestamp issued_at
+    }
+    PRESCRIPTION_ITEMS {
+        bigint id PK
+        bigint prescription_id FK
+        varchar medication
+        varchar dose
+        varchar frequency
+        int duration_days
+        varchar instructions
+    }
+    LAB_ORDERS {
+        bigint id PK
+        bigint patient_id FK
+        timestamp requested_at
+        timestamp completed_at
+    }
+    LAB_RESULTS {
+        bigint id PK
+        bigint lab_order_id FK
+        varchar exam_type
+        varchar parameter_name
+        double result_value
+        varchar unit
+        double reference_min
+        double reference_max
+        varchar status
+    }
+    SESSION_TOKENS {
+        varchar token_hash PK
+        bigint patient_id FK
+        timestamp created_at
+        timestamp expires_at
+    }
